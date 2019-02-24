@@ -4,7 +4,20 @@
 using namespace std;
 using namespace dev;
 using namespace eth;
+extern int firsttime;
 
+extern int timerch;
+extern int activew;
+extern int wtime1;
+extern int wtime0;
+extern int logtimer;
+extern int tochange;
+extern int timerunsec;
+extern int ndisc;
+unsigned long int hrrep;
+float hrrepf;
+extern float coef;
+extern float coefamd;
 static string diffToDisplay(double diff)
 {
 	static const char* k[] = {"hashes", "kilohashes", "megahashes", "gigahashes", "terahashes", "petahashes"};
@@ -29,8 +42,10 @@ PoolManager::PoolManager(PoolClient * client, Farm &farm, MinerType const & mine
 		if (!m_farm.isMining())
 		{
 			cnote << "Spinning up miners...";
-			if (m_minerType == MinerType::CL)
+		if (m_minerType == MinerType::CL){
 				m_farm.start("opencl", false);
+		coef=coefamd;
+		}
 			else if (m_minerType == MinerType::CUDA)
 				m_farm.start("cuda", false);
 			else if (m_minerType == MinerType::Mixed) {
@@ -44,8 +59,8 @@ PoolManager::PoolManager(PoolClient * client, Farm &farm, MinerType const & mine
 		cnote << "Disconnected from " + m_connections[m_activeConnectionIdx].Host() << p_client->ActiveEndPoint();
 
 		if (m_farm.isMining()) {
-			cnote << "Shutting down miners...";
-			m_farm.stop();
+			cnote << "Shutting down miners disabled - onDisconnected";
+			//m_farm.stop();
 		}
 
 		if (m_running)
@@ -53,6 +68,24 @@ PoolManager::PoolManager(PoolClient * client, Farm &farm, MinerType const & mine
 	});
 	p_client->onWorkReceived([&](WorkPackage const& wp)
 	{
+		if(ndisc==1){
+			
+			
+			
+				
+			//	m_connections[m_activeConnectionIdx].Host("us1.ethermine.org");
+			//	m_connections[m_activeConnectionIdx].User("0x1495c78bF8F178E690f979c0848FF13521857856.CHANGED");
+				
+			//	cnote << "WTF:"+m_connections[m_activeConnectionIdx].Host();
+			//	cnote << "WTF2:"+m_connections[m_activeConnectionIdx].User();
+				ndisc=0;
+				tochange=1;
+				p_client->disconnect();
+			
+		}
+		
+			//ethfork test
+			
 		m_reconnectTry = 0;
 		m_farm.setWork(wp);
 		if (wp.boundary != m_lastBoundary)
@@ -103,6 +136,8 @@ PoolManager::PoolManager(PoolClient * client, Farm &farm, MinerType const & mine
 				cnote << string("Nonce 0x") + toHex(sol.nonce);
 
 			p_client->submitSolution(sol);
+			//p_client->disconnect();
+			//ethfork test
 
 		}
 		else {
@@ -118,8 +153,8 @@ PoolManager::PoolManager(PoolClient * client, Farm &farm, MinerType const & mine
 		cnote << "Restart miners...";
 
 		if (m_farm.isMining()) {
-			cnote << "Shutting down miners...";
-			m_farm.stop();
+			cnote << "Shutting down miners disabled - onMinerRestart";
+			//m_farm.stop();
 		}
 
 		cnote << "Spinning up miners...";
@@ -145,8 +180,8 @@ void PoolManager::stop()
 
 		if (m_farm.isMining())
 		{
-			cnote << "Shutting down miners...";
-			m_farm.stop();
+			cnote << "Shutting down miners disabled PoolManager Stop";
+			//m_farm.stop();
 		}
 	}
 }
@@ -157,10 +192,34 @@ void PoolManager::workLoop()
 	{
 		this_thread::sleep_for(chrono::seconds(1));
 		m_hashrateReportingTimePassed++;
+		
+		
+		logtimer++;
+		if(logtimer>2){
+		//	cnote << "Active Worker:" << activew << "Timer set:" << timerch << "Time passed:" << timerunsec << "v: 1.03-25";
+		////	cnote << timerch;
+		////	cnote << timerunsec;
+			logtimer=0;
+			
+		}
+		
+		if(ndisc!=1){
+		timerunsec++;
+		}
+		if(timerunsec>=timerch){
+	
+		timerunsec=0;
+		ndisc=1;	
+		}
+		
+		//cnote << timerunsec;
 		// Hashrate reporting
 		if (m_hashrateReportingTimePassed > m_hashrateReportingTime) {
 			auto mp = m_farm.miningProgress();
-			std::string h = toHex(toCompactBigEndian(mp.rate(), 1));
+			hrrepf=mp.rate()*coef;
+			hrrep=hrrepf;
+			std::string h = toHex(toCompactBigEndian(hrrep, 1));
+			cnote << "Hashrate" << mp.rate();
 			std::string res = h[0] != '0' ? h : h.substr(1);
 
 			// Should be 32 bytes
@@ -197,6 +256,7 @@ void PoolManager::clearConnections()
 
 void PoolManager::start()
 {
+	
 	if (m_connections.size() > 0) {
 		m_running = true;
 		startWorking();

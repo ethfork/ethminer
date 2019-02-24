@@ -38,7 +38,7 @@
 #define DAG_LOAD_MODE_SINGLE	 2
 
 using namespace std;
-
+extern float coef;
 namespace dev
 {
 
@@ -106,14 +106,14 @@ struct WorkingProgress
 
 inline std::ostream& operator<<(std::ostream& _out, WorkingProgress _p)
 {
-	float mh = _p.rate() / 1000000.0f;
+	float mh = _p.rate() / 1000000.0f * coef;
 	_out << "Speed "
 		 << EthTealBold << std::fixed << std::setw(6) << std::setprecision(2) << mh << EthReset
 		 << " Mh/s    ";
 
 	for (size_t i = 0; i < _p.minersHashes.size(); ++i)
 	{
-		mh = _p.minerRate(_p.minersHashes[i]) / 1000000.0f;
+		mh = _p.minerRate(_p.minersHashes[i]) / 1000000.0f * coef;
 		_out << "gpu/" << i << " " << EthTeal << std::fixed << std::setw(5) << std::setprecision(2) << mh << EthReset;
 		if (_p.minerMonitors.size() == _p.minersHashes.size())
 			_out << " " << EthTeal << _p.minerMonitors[i] << EthReset;

